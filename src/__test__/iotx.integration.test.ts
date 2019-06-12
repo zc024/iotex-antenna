@@ -8,10 +8,13 @@ import path from "path";
 import sleepPromise from "sleep-promise";
 // @ts-ignore
 import solc from "solc";
+import { Account } from "../account/account";
+import { ISigner, SignedData } from "../account/signer";
 import { toRau } from "../account/utils";
 import Antenna from "../antenna";
 import { Contract } from "../contract/contract";
 import { ABI } from "./pools.abi";
+import { makeSigner } from "../crypto/crypto";
 
 dotenv.config();
 const { IOTEX_CORE = "", TEST_PRIVATE_KEY_HAVING_IOTX = "" } = process.env;
@@ -221,4 +224,46 @@ test("decode method multiple result", async t => {
   t.deepEqual("0", result[0].toString());
   t.deepEqual("ThisIsAuthString", result[1]);
   t.deepEqual("0", result[2].toString());
+});
+
+accountTest("local signer", async t => {
+  const antenna = new Antenna(IOTEX_CORE);
+
+  const account = Account.fromPrivateKey(TEST_PRIVATE_KEY_HAVING_IOTX);
+
+  class LocalAccountSigner implements ISigner {
+    private account: Account;
+
+    constructor(ccount: Account) {
+      this.account = account;
+    }
+
+    public async sign(
+      address: string,
+      data: string | Buffer | Uint8Array
+    ): Promise<SignedData> {
+      return {
+        data: Buffer.from(
+          makeSigner(0)(data.toString("hex"), this.account.privateKey),
+          "hex"
+        ),
+        publicKey: this.account.publicKey
+      };
+    }
+  }
+
+  const sender = antenna.iotx.accounts.addressToAccount(
+    account.address,
+    new LocalAccountSigner(account)
+  );
+  const oneIotx = toRau("1", "iotx");
+  // @ts-ignore
+  const hash = await antenna.iotx.sendTransfer({
+    from: sender.address,
+    to: "io187wzp08vnhjjpkydnr97qlh8kh0dpkkytfam8j",
+    value: oneIotx,
+    gasLimit: "100000",
+    gasPrice: "1"
+  });
+  t.truthy(hash);
 });
