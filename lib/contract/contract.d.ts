@@ -1,11 +1,13 @@
 /// <reference types="node" />
 import { IAccount } from "../account/account";
+import { SignerPlugin } from "../action/method";
 import { Execution } from "../action/types";
 import { IRpcMethod } from "../rpc-method/types";
 import { AbiByFunc } from "./abi-to-byte";
 export declare type Options = {
   data?: Buffer;
   provider?: IRpcMethod;
+  signer?: SignerPlugin;
 };
 export declare class Contract {
   private readonly abi?;
@@ -35,6 +37,7 @@ export declare class Contract {
     gasLimit?: string | undefined,
     gasPrice?: string
   ): Execution;
+  decodeMethodResult(method: string, result: string): any | Array<any>;
 }
 export interface MethodExecuteParameter {
   account: IAccount;

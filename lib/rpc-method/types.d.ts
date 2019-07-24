@@ -81,6 +81,7 @@ export interface IBlockMeta {
 }
 export interface IGetBlockMetasResponse {
   blkMetas: Array<IBlockMeta>;
+  total: number;
 }
 export declare const GetBlockMetasRequest: {
   to(req: IGetBlockMetasRequest): any;
@@ -350,7 +351,7 @@ export declare const GetActionsRequest: {
   to(req: IGetActionsRequest): any;
   fromTransfer(pbRes: any): any;
   fromVote(pbRes: any): any;
-  fromExecution(pbRes: any): any;
+  fromExecution(pbRes: actionPb.Execution | undefined): IExecution | undefined;
   fromStartSubChain(pbRes: any): any;
   fromStopSubChain(pbRes: any): any;
   fromPutBlock(pbRes: any): any;

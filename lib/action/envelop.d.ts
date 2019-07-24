@@ -59,6 +59,7 @@ export declare class Envelop {
   );
   core(): actionPb.ActionCore;
   bytestream(): Uint8Array;
+  static deserialize(bytes: Uint8Array): Envelop;
 }
 export declare class SealedEnvelop {
   act: Envelop;

@@ -12,6 +12,8 @@ import { Account } from "../account/account";
 import { ISigner, SignedData } from "../account/signer";
 import { toRau } from "../account/utils";
 import Antenna from "../antenna";
+import { Contract } from "../contract/contract";
+import { ABI } from "./pools.abi";
 import { makeSigner } from "../crypto/crypto";
 
 dotenv.config();
@@ -38,8 +40,7 @@ test.serial("transfer throws if no account", async t => {
   const antenna = new Antenna(IOTEX_CORE);
   await t.throwsAsync(
     async () => {
-      // @ts-ignore
-      antenna.iotx.sendTransfer({
+      await antenna.iotx.sendTransfer({
         from: "empty from",
         to: "empty to",
         value: "1"
@@ -84,7 +85,7 @@ accountTest("transfer", async t => {
     to: acctNew.address,
     value: oneIotx,
     gasLimit: "100000",
-    gasPrice: "1"
+    gasPrice: "1000000000000000000"
   });
   t.truthy(hash);
 
@@ -127,7 +128,7 @@ accountTest("deployContract", async t => {
       amount: "0",
       abi: contract.interface,
       data: Buffer.from(contract.bytecode, "hex"),
-      gasPrice: "1",
+      gasPrice: "1000000000000000000",
       gasLimit: "1000000"
     },
     8
@@ -155,7 +156,7 @@ accountTest("executeContract", async t => {
       abi: contract.interface,
       amount: "0",
       method: "set",
-      gasPrice: "1",
+      gasPrice: "1000000000000000000",
       gasLimit: "1000000"
     },
     102
@@ -191,11 +192,38 @@ accountTest("claim from rewarding fund", async t => {
   const hash = await antenna.iotx.claimFromRewardingFund({
     from: sender.address,
     amount: "0",
-    gasPrice: "1",
+    gasPrice: "1000000000000000000",
     gasLimit: "1000000",
     data: Buffer.from("test")
   });
   t.truthy(hash);
+});
+
+test("decode method one result", async t => {
+  const antenna = new Antenna(IOTEX_CORE);
+  const contract = new Contract(
+    ABI,
+    "io15rxn7xdmtxgpe76lcka49za00kuutwxyqvwupx"
+  );
+
+  const hex =
+    "000000000000000000000000dd638623da9eccc67a07df098b2446cfb3b6f4c1";
+  const result = contract.decodeMethodResult("owner", hex);
+  t.deepEqual("io1m43cvg76nmxvv7s8muyckfzxe7emdaxp3xu84j", result);
+});
+
+test("decode method multiple result", async t => {
+  const contract = new Contract(
+    ABI,
+    "io15rxn7xdmtxgpe76lcka49za00kuutwxyqvwupx"
+  );
+
+  const hex =
+    "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000600000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001054686973497341757468537472696e6700000000000000000000000000000000";
+  const result = contract.decodeMethodResult("userpools", hex);
+  t.deepEqual("0", result[0].toString());
+  t.deepEqual("ThisIsAuthString", result[1]);
+  t.deepEqual("0", result[2].toString());
 });
 
 accountTest("local signer", async t => {
